@@ -1,0 +1,36 @@
+[Unit]
+Description=PostgreSQL database server
+After=network.target
+[Service]
+Type=forking
+User=@pgsqluser
+Group=@pgsqluser
+# Maximum number of seconds pg_ctl will wait for postgres to start
+# Note that PGSTARTTIMEOUT should be less than TimeoutSec value.
+Environment=PGSTARTTIMEOUT=270
+Environment=PGROOT=@PgsqlBasePath
+Environment=PGDATA=@PgsqlDataPath
+#ExecStartPre=@PgsqlBasePath/bin/postgresql-check-db-dir ${PGDATA}
+ExecStart= @PgsqlBasePath/bin/pg_ctl -s -D ${PGDATA} start -w -t ${PGSTARTTIMEOUT}
+ExecReload=@PgsqlBasePath/bin/pg_ctl -s -D ${PGDATA} reload
+ExecStop=@PgsqlBasePath/bin/pg_ctl -s -D ${PGDATA} stop -m fast
+# Due to PostgreSQL's use of shared memory, OOM killer is often overzealous in
+# killing Postgres, so adjust it downward
+OOMScoreAdjust=-999
+# Give a reasonable amount of time for the server to start up/shut down.
+# Ideally, the timeout for starting PostgreSQL server should be handled
+# more nicely by pg_ctl in ExecStart,so keep its timeout smaller than this value.
+TimeoutSec=300
+# Disable OOM kill on the postmaster
+# OOMScoreAdjust=-1000
+# ... but allow it still to be effective for child processes
+# (note that these settings are ignored by Postgres releases before 9.5)
+#Environment=PG_OOM_ADJUST_FILE=/proc/self/oom_score_adj
+#Environment=PG_OOM_ADJUST_VALUE=0
+# Additional security-related features
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+NoNewPrivileges=true
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+#cloud-config
+
+# apt:
+#   sources_list: | # written by cloud-init custom template
+#     deb http://mirrors.163.com/ubuntu/ jammy main restricted universe multiverse
+#     deb http://mirrors.163.com/ubuntu/ jammy-security main restricted universe multiverse
+#     deb http://mirrors.163.com/ubuntu/ jammy-updates main restricted universe multiverse
+#     deb http://mirrors.163.com/ubuntu/ jammy-proposed main restricted universe multiverse
+#     deb http://mirrors.163.com/ubuntu/ jammy-backports main restricted universe multiverse
+#     deb-src http://mirrors.163.com/ubuntu/ jammy main restricted universe multiverse
+#     deb-src http://mirrors.163.com/ubuntu/ jammy-security main restricted universe multiverse
+#     deb-src http://mirrors.163.com/ubuntu/ jammy-updates main restricted universe multiverse
+#     deb-src http://mirrors.163.com/ubuntu/ jammy-proposed main restricted universe multiverse
+#     deb-src http://mirrors.163.com/ubuntu/ jammy-backports main restricted universe multiverse
+
+packages:
+  - lsb_release
+  - apt-transport-https
+  - ca-certificates
+package_update: true
+timezone: Asia/Shanghai
+# users:
+#   - name: postgres
+#     sudo: ALL=(ALL) NOPASSWD:ALL
+#     homedir: /var/lib/postgresql
+#     shell: /bin/bash
+#     uid: 9999
+runcmd:
+  - sh -c 'wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/postgresql.gpg > /dev/null'
+  - sudo sh -c 'echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+  - sudo sh -c 'groupadd -r postgres --gid=999 && useradd -r -g postgres --uid=9999 --home-dir=/var/lib/postgresql postgres'
+bootcmd:
+  - printf "[Resolve]\nDNS=8.8.8.8" > /etc/systemd/resolved.conf
+  - [systemctl, restart, systemd-resolved]
